@@ -168,7 +168,7 @@ We use *Icarus Verilog* for simulation.
 ### Commands
 
 # Compile
-iverilog -o traffic_sim design.sv testbench.sv
+iverilog -o traffic_sim traffic_light.v tb_traffic_light.v
 
 # Run simulation
 vvp traffic_sim
