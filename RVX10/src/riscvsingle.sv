@@ -324,14 +324,12 @@ endmodule
 module extend(input  logic [31:7] instr,
               input  logic [1:0]  immsrc,
               output logic [31:0] immext);
-  always_comb
-    case(immsrc) 
-      2'b00:   immext = {{20{instr[31]}}, instr[31:20]}; // I-type
-      2'b01:   immext = {{20{instr[31]}}, instr[31:25], instr[11:7]}; // S-type
-      2'b10:   immext = {{20{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0}; // B-type
-      2'b11:   immext = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0}; // J-type
-      default: immext = 32'bx;
-    endcase             
+
+  assign immext = (immsrc == 2'b00) ? {{20{instr[31]}}, instr[31:20]} :  // I-type
+                  (immsrc == 2'b01) ? {{20{instr[31]}}, instr[31:25], instr[11:7]} :  // S-type
+                  (immsrc == 2'b10) ? {{19{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0} :  // B-type (note: 19 sign bits since LSB is 0)
+                  (immsrc == 2'b11) ? {{11{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0} :  // J-type (note: 11 sign bits)
+                  32'bx;  // default
 endmodule
 
 module flopr #(parameter WIDTH = 8)
@@ -385,29 +383,29 @@ module alu(input  logic [31:0] a, b,
            
   logic [4:0] shamt = b[4:0]; // Shift amount for rotate instructions
 
-  always_comb
-    case (alucontrol)
-      // Original ALU Operations
-      4'b0000: result = a + b;            // add
-      4'b0001: result = a - b;            // subtract
-      4'b0010: result = a & b;            // and
-      4'b0011: result = a | b;            // or
-      4'b0101: result = signed'(a) < signed'(b); // slt
-      
-      // **ADDED**: Logic for all 10 RVX10 instructions [cite: 102]
-      4'b1000: result = a & ~b;           // ANDN
-      4'b1001: result = a | ~b;           // ORN
-      4'b1010: result = ~(a ^ b);         // XNOR
-      4'b1011: result = (signed'(a) < signed'(b)) ? a : b; // MIN (signed)
-      4'b1100: result = (signed'(a) > signed'(b)) ? a : b; // MAX (signed)
-      4'b1101: result = (a < b) ? a : b;  // MINU (unsigned)
-      4'b1110: result = (a > b) ? a : b;  // MAXU (unsigned)
-      4'b1111: result = (shamt == 0) ? a : (a << shamt) | (a >> (32 - shamt)); // ROL [cite: 105, 127]
-      4'b0110: result = (shamt == 0) ? a : (a >> shamt) | (a << (32 - shamt)); // ROR [cite: 105, 127]
-      4'b0111: result = a[31] ? -a : a;   // ABS [cite: 106, 127]
-      
-      default: result = 32'bx;
-    endcase
+always_comb
+  case (alucontrol)
+    // Original ALU Operations
+    4'b0000: result = a + b;            // add
+    4'b0001: result = a - b;            // subtract
+    4'b0010: result = a & b;            // and
+    4'b0011: result = a | b;            // or
+    4'b0101: result = $signed(a) < $signed(b); // slt
+    
+    // **ADDED**: Logic for all 10 RVX10 instructions
+    4'b1000: result = a & ~b;           // ANDN
+    4'b1001: result = a | ~b;           // ORN
+    4'b1010: result = ~(a ^ b);         // XNOR
+    4'b1011: result = ($signed(a) < $signed(b)) ? a : b; // MIN (signed)
+    4'b1100: result = ($signed(a) > $signed(b)) ? a : b; // MAX (signed)
+    4'b1101: result = (a < b) ? a : b;  // MINU (unsigned)
+    4'b1110: result = (a > b) ? a : b;  // MAXU (unsigned)
+    4'b1111: result = (shamt == 0) ? a : (a << shamt) | (a >> (32 - shamt)); // ROL
+    4'b0110: result = (shamt == 0) ? a : (a >> shamt) | (a << (32 - shamt)); // ROR
+    4'b0111: result = ($signed(a) >= 0) ? a : -$signed(a);   // ABS
+    
+    default: result = 32'bx;
+  endcase
 
   assign zero = (result == 32'b0);
 endmodule
