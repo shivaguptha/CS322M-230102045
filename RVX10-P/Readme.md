@@ -11,5 +11,5 @@ This repository contains the complete project, organized as follows:
 * **/tb**: Contains the testbench (`tb_pipeline.sv`) and the memory images (e.g., `rvx10_pipeline.hex`).
 * **/docs**: Contains this README, the detailed `REPORT.md` (which includes a design description and hazard logic analysis), and all supporting waveform screenshots.
 ## Pipelined processor implemented
-![Processor](docs\Pipelined_processor.png)
+![Pipelined processor implemented](../RVX10-P/docs/pipelined_processor)
 ##  I attached a detailed report file in the docs folder.
